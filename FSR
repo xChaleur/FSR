@@ -1,0 +1,311 @@
+import os
+import shutil
+import json
+from pathlib import Path
+import tkinter as tk
+from tkinter import filedialog, messagebox, Toplevel, Checkbutton, IntVar
+
+# Path to save the default folder locations
+DEFAULT_LOCATIONS_FILE = Path.home() / "default_locations.json"
+
+# Global variables to store the currently selected folders and extensions
+selected_folder = None
+selected_source = None  # This will hold the xConnect source folder
+default_folder_1 = None  # This will hold Default Folder 1 for the session
+default_folder_2 = None  # This will hold Default Folder 2 for the session
+default_folder_3 = None  # This will hold Default Folder 3 for the session
+selected_extensions = []  # Store the selected extensions
+
+# Function to load default folder locations from a file
+def load_default_locations():
+    global default_folder_1, default_folder_2, default_folder_3
+    if DEFAULT_LOCATIONS_FILE.exists():
+        with open(DEFAULT_LOCATIONS_FILE, 'r') as file:
+            data = json.load(file)
+            # Check if each path is not None before converting to Path()
+            default_folder_1_path = data.get("default_folder_1", None)
+            default_folder_2_path = data.get("default_folder_2", None)
+            default_folder_3_path = data.get("default_folder_3", None)
+
+            if default_folder_1_path:
+                default_folder_1 = Path(default_folder_1_path)
+                default_folder_1_label.config(text=f"Default Folder 1: {default_folder_1}")
+                default_folder_1_label.pack(side=tk.LEFT)
+
+            if default_folder_2_path:
+                default_folder_2 = Path(default_folder_2_path)
+                default_folder_2_label.config(text=f"Default Folder 2: {default_folder_2}")
+                default_folder_2_label.pack(side=tk.LEFT)
+
+            if default_folder_3_path:
+                default_folder_3 = Path(default_folder_3_path)
+                default_folder_3_label.config(text=f"Default Folder 3: {default_folder_3}")
+                default_folder_3_label.pack(side=tk.LEFT)
+
+# Function to save default folder locations to a file
+def save_default_locations():
+    global default_folder_1, default_folder_2, default_folder_3
+    data = {
+        "default_folder_1": str(default_folder_1) if default_folder_1 else None,
+        "default_folder_2": str(default_folder_2) if default_folder_2 else None,
+        "default_folder_3": str(default_folder_3) if default_folder_3 else None
+    }
+    with open(DEFAULT_LOCATIONS_FILE, 'w') as file:
+        json.dump(data, file)
+    messagebox.showinfo("Saved", "Default folder locations have been saved.")
+
+# Function to select the xConnect source folder
+def select_xconnect_source():
+    global selected_source
+    selected_source_path = filedialog.askdirectory(title="Select xConnect Source Folder")
+
+    if selected_source_path:
+        selected_source = Path(selected_source_path)
+        messagebox.showinfo("xConnect", f"Source folder selected: {selected_source}")
+    else:
+        messagebox.showwarning("Folder Error", "No source folder selected for xConnect!")
+
+# Function to move files with the selected extensions
+def move_files_with_extensions(source_folder, extensions):
+    try:
+        # Check if the folder still exists
+        if not source_folder or not source_folder.exists():
+            messagebox.showerror("Folder Error", "The selected folder no longer exists.")
+            return
+        
+        # Define the Downloads folder path
+        downloads_folder = Path.home() / "Downloads"
+        files_moved_total = 0
+
+        # Move files for each selected extension
+        for ext in extensions:
+            # Create a new folder in the Downloads folder for each extension
+            new_folder = downloads_folder / f"moved_files_{ext.strip('.')}"
+            new_folder.mkdir(exist_ok=True)
+
+            # Move files with the current extension
+            files_moved = 0
+            for file in source_folder.glob(f"*.{ext.strip('.')}"):
+                shutil.move(str(file), new_folder)
+                files_moved += 1
+                files_moved_total += 1
+
+        if files_moved_total > 0:
+            messagebox.showinfo("Success", f"Moved {files_moved_total} files with selected extensions to {downloads_folder}")
+        else:
+            messagebox.showinfo("No Files Found", "No files with the selected extensions were found in the selected folder.")
+    except Exception as e:
+        messagebox.showerror("Error", f"An error occurred: {e}")
+
+# Function to select a folder
+def select_folder():
+    global selected_folder
+    selected_folder_path = filedialog.askdirectory(title="Select Folder")
+
+    if selected_folder_path:
+        selected_folder = Path(selected_folder_path)
+        folder_label.config(text=f"Current Folder: {selected_folder}")
+    else:
+        messagebox.showwarning("Folder Error", "No folder selected!")
+
+# Function to select Default Folder 1 manually
+def select_default_folder_1():
+    global default_folder_1
+    selected_default_folder_path = filedialog.askdirectory(title="Select Default Folder 1")
+    if selected_default_folder_path:
+        default_folder_1 = Path(selected_default_folder_path)
+        default_folder_1_label.config(text=f"Default Folder 1: {default_folder_1}")
+        default_folder_1_label.pack(side=tk.LEFT)  # Show the label when folder is selected
+
+# Function to select Default Folder 2 manually
+def select_default_folder_2():
+    global default_folder_2
+    selected_default_folder_2_path = filedialog.askdirectory(title="Select Default Folder 2")
+
+    if selected_default_folder_2_path:
+        default_folder_2 = Path(selected_default_folder_2_path)
+        default_folder_2_label.config(text=f"Default Folder 2: {default_folder_2}")
+        default_folder_2_label.pack(side=tk.LEFT)  # Show the label when folder is selected
+
+# Function to select Default Folder 3 manually
+def select_default_folder_3():
+    global default_folder_3
+    selected_default_folder_3_path = filedialog.askdirectory(title="Select Default Folder 3")
+
+    if selected_default_folder_3_path:
+        default_folder_3 = Path(selected_default_folder_3_path)
+        default_folder_3_label.config(text=f"Default Folder 3: {default_folder_3}")
+        default_folder_3_label.pack(side=tk.LEFT)  # Show the label when folder is selected
+
+# Function for the "xConnect" option
+def connect_action():
+    # Display a message box when xConnect is clicked (for now, you can modify this functionality as needed)
+    messagebox.showinfo("xConnect", "xConnect option clicked! Implement your desired action here.")
+
+# Function to display a prompt and allow selection of multiple extensions
+def select_multiple_extensions(extensions):
+    def on_confirm():
+        global selected_extensions
+        selected_extensions = [ext for ext, var in checkboxes.items() if var.get() == 1]
+        if selected_extensions:
+            # Use the default folder 1 if it's set, otherwise use the selected folder
+            folder_to_use = default_folder_1 if default_folder_1 else selected_folder
+            move_files_with_extensions(folder_to_use, selected_extensions)
+        else:
+            messagebox.showwarning("No Selection", "No extensions selected.")
+        extension_window.destroy()
+
+    # Create a new window for selecting multiple extensions
+    extension_window = Toplevel(root)
+    extension_window.title("Select Extensions")
+    extension_window.geometry("300x400")
+
+    checkboxes = {}
+    for ext in extensions:
+        var = IntVar()
+        check = Checkbutton(extension_window, text=ext, variable=var)
+        check.pack(anchor=tk.W)
+        checkboxes[ext] = var
+
+    confirm_button = tk.Button(extension_window, text="Confirm", command=on_confirm)
+    confirm_button.pack(pady=10)
+
+# Function to list all unique file extensions in the selected folder and open the selection window
+def list_extensions():
+    global selected_folder
+    if selected_folder is None:
+        messagebox.showwarning("Folder Error", "No folder selected!")
+        return
+
+    # Set to store unique extensions
+    extensions = set()
+    for file in selected_folder.iterdir():
+        if file.is_file():
+            extensions.add(file.suffix)  # Add the extension to the set
+
+    if extensions:
+        select_multiple_extensions(extensions)  # Open the selection window with available extensions
+    else:
+        messagebox.showinfo("No Files Found", "No files found in the selected folder.")
+
+# Function to clear the selected folder and extensions
+def clear_selections():
+    global selected_folder, default_folder_1, default_folder_2, default_folder_3, selected_extensions, selected_source
+    selected_folder = None
+    default_folder_1 = None
+    default_folder_2 = None
+    default_folder_3 = None
+    selected_source = None  # Clear the xConnect source
+    selected_extensions = []
+    folder_label.config(text="Current Folder: None")
+    default_folder_1_label.pack_forget()  # Hide the label
+    default_folder_2_label.pack_forget()  # Hide the label
+    default_folder_3_label.pack_forget()  # Hide the label
+
+# Menu action for quitting the app
+def quit_app():
+    root.quit()
+
+# Menu action for opening an "About" dialog
+def show_about():
+    messagebox.showinfo("About", "File Mover Application\nVersion 1.0\nCreated by YourName")
+
+# Menu action for settings (placeholder)
+def open_settings():
+    messagebox.showinfo("Settings", "This is where settings options will go.")
+
+# Create the GUI application
+root = tk.Tk()
+root.title("File Mover")
+root.geometry("600x600")  # Set fixed size for the window to 600x600
+root.resizable(False, False)  # Disable resizing of the window
+
+# Frame for Default Folder 1 display (initialize here to use later)
+default_folder_1_frame = tk.Frame(root)
+default_folder_1_label = tk.Label(default_folder_1_frame, text="")
+default_folder_1_label.pack_forget()  # Hide the label initially
+
+# Frame for Default Folder 2 display (initialize here to use later)
+default_folder_2_frame = tk.Frame(root)
+default_folder_2_label = tk.Label(default_folder_2_frame, text="")
+default_folder_2_label.pack_forget()  # Hide the label initially
+
+# Frame for Default Folder 3 display (initialize here to use later)
+default_folder_3_frame = tk.Frame(root)
+default_folder_3_label = tk.Label(default_folder_3_frame, text="")
+default_folder_3_label.pack_forget()  # Hide the label initially
+
+# Load default locations if they exist
+load_default_locations()
+
+# Create a menu bar
+menu_bar = tk.Menu(root)
+
+# File menu
+file_menu = tk.Menu(menu_bar, tearoff=0)
+file_menu.add_command(label="Save Default Locations", command=save_default_locations)
+file_menu.add_separator()
+file_menu.add_command(label="Exit", command=quit_app)
+menu_bar.add_cascade(label="File", menu=file_menu)
+
+# Options menu
+options_menu = tk.Menu(menu_bar, tearoff=0)
+options_menu.add_command(label="xConnect", command=connect_action)  # Changed "Connect" to "xConnect"
+options_menu.add_command(label="List Extensions in Folder", command=list_extensions)
+
+# Submenu for default folders
+default_folders_menu = tk.Menu(options_menu, tearoff=0)
+
+# Add option to select Default Folder 1 manually
+default_folders_menu.add_command(label="Select Default Folder 1", command=select_default_folder_1)
+default_folders_menu.add_command(label="Select Default Folder 2", command=select_default_folder_2)
+default_folders_menu.add_command(label="Select Default Folder 3", command=select_default_folder_3)
+
+# Submenu for xConnect source selection
+xconnect_menu = tk.Menu(options_menu, tearoff=0)
+xconnect_menu.add_command(label="Select Source", command=select_xconnect_source)
+
+options_menu.add_cascade(label="xConnect", menu=xconnect_menu)
+options_menu.add_cascade(label="Default Folders", menu=default_folders_menu)
+options_menu.add_command(label="Settings", command=open_settings)
+menu_bar.add_cascade(label="Options", menu=options_menu)
+
+# Help menu
+help_menu = tk.Menu(menu_bar, tearoff=0)
+help_menu.add_command(label="About", command=show_about)
+menu_bar.add_cascade(label="Help", menu=help_menu)
+
+# Add the menu bar to the root window
+root.config(menu=menu_bar)
+
+# Button to select a folder
+select_folder_button = tk.Button(root, text="Select Folder", command=select_folder)
+select_folder_button.pack(padx=10, pady=10)
+
+# Button to move files
+move_files_button = tk.Button(root, text="Move Files", command=lambda: move_files_with_extensions(default_folder_1 if default_folder_1 else selected_folder, selected_extensions))
+move_files_button.pack(padx=10, pady=10)
+
+# Frame for Folder display
+folder_frame = tk.Frame(root)
+folder_frame.pack(padx=10, pady=5)
+
+# Label to display the current selected folder (initially cleared)
+folder_label = tk.Label(folder_frame, text="Current Folder: None")
+folder_label.pack(side=tk.LEFT)
+
+# Frame for Default Folder 1 display
+default_folder_1_frame.pack(padx=10, pady=5)
+
+# Frame for Default Folder 2 display
+default_folder_2_frame.pack(padx=10, pady=5)
+
+# Frame for Default Folder 3 display
+default_folder_3_frame.pack(padx=10, pady=5)
+
+# Button to clear the selected folder, default folders, and extensions
+clear_button = tk.Button(root, text="Clear Selections", command=clear_selections, fg="red", padx=5)
+clear_button.pack(padx=10, pady=10)
+
+# Start the application loop
+root.mainloop()
